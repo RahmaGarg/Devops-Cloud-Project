@@ -1,0 +1,16 @@
+# Ignore le dossier .terraform (et tout son contenu)
+terraform/.terraform/
+# Ignorer le dossier .terraform
+.terraform/
+# Ignore les fichiers d'état Terraform
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+
+# Ignore les environnements virtuels Python
+myenv/
+
+# Ignore les fichiers temporaires et les logs
+*.log
+*.bak
+*.tmp
+
