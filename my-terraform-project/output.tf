@@ -9,16 +9,13 @@ output "instance_details" {
     subnet_id           = aws_instance.public_instance.subnet_id
   }
 }
+# Output the S3 URI of the stored private key
 output "deployer_key_s3_uri" {
   description = "S3 URI of the deployer key file"
-  value       = "s3://${aws_s3_object.private_key_object.bucket}/${aws_s3_object.private_key_object.key}"
+  value       = "s3://${aws_s3_bucket_object.private_key_object.bucket}/${aws_s3_bucket_object.private_key_object.key}"
 }
-
+# Output the RDS endpoint (hostname)
 output "rds_endpoint" {
-  description = "The endpoint of the RDS database"
-  value = {
-    endpoint        = aws_db_instance.mydb.endpoint
-    username        = aws_db_instance.mydb.username
-    db_instance_id  = aws_db_instance.mydb.id
-  }
+  description = "The endpoint of the RDS MySQL instance"
+  value       = aws_db_instance.mydb.endpoint
 }
