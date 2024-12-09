@@ -49,4 +49,6 @@ variable "ec2_ami_id" {
 variable "s3_bucket_name" {
   description = "The name of the S3 bucket for storing the private key"
   type        = string
+  default     = "custom-terraform-state-bucket-123456-0f4b4cef"
 }
+
