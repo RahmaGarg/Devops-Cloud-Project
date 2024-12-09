@@ -19,12 +19,12 @@ pipeline {
          stage('Provision Server and Database') {
              steps {
                  script {
-                     dir('terraform/remote_backend') {
+                     dir('my-terraform-project/remote_backend') {
                          sh "terraform init"
                          // Apply Terraform configuration
                          sh "terraform apply --auto-approve"
                      }
-                     dir('terraform') {
+                     dir('my-terraform-project') {
                          // Initialize Terraform
                          sh "terraform init"
                          sh "terraform plan -lock=false"
@@ -64,7 +64,7 @@ pipeline {
         stage('Update Frontend Configuration') {
             steps {
                 script {
-                    dir('frontend/src') {
+                    dir('enis-app-tp/frontend/src') {
                         writeFile file: 'config.js', text: """
                         export const API_BASE_URL = 'http://${EC2_PUBLIC_IP}:8000';
                         """
@@ -79,7 +79,7 @@ pipeline {
         stage('Update Backend Configuration') {
             steps {
                 script {
-                    dir('backend/backend') {
+                    dir('enis-app-tp/backend/backend') {
                         // Verify the existence of settings.py
                         sh '''
                         if [ -f "settings.py" ]; then
@@ -118,7 +118,7 @@ pipeline {
 
         stage('Build Frontend Docker Image') {
                     steps {
-                        dir('frontend') {
+                        dir('enis-app-tp/frontend') {
                             script {
                                 echo 'Building Frontend Docker Image...'
                                 def frontendImage = docker.build('frontend-app')
@@ -129,7 +129,7 @@ pipeline {
                 }
         stage('Build Backend Docker Image') {
                     steps {
-                        dir('backend') {
+                        dir('enis-app-tp/backend') {
                             script {
                                 echo 'Building Backend Docker Image...'
                                 def backendImage = docker.build('backend-app')
