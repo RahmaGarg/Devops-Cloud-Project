@@ -65,13 +65,11 @@
         groups: docker
         append: yes
 
-- name: Reconnect to server session
-  meta: reset_connection
+    # Reconnect to server session
+    - name: Reconnect to server session
+      meta: reset_connection
 
-- name: Install AWS CLI on EC2 Instances
-  hosts: servers
-  become: yes
-  tasks:
+    # Install AWS CLI on EC2 Instances
     - name: Ensure curl is installed
       package:
         name: curl
@@ -109,13 +107,13 @@
     - debug:
         msg: "AWS CLI version: {{ aws_cli_version.stdout }}"
 
-  - name: Log in to Amazon ECR
-  docker_login:
-       registry_url: "{{ ecr_url }}"
-       username: AWS
-       password: "{{ lookup('pipe', 'aws ecr get-login-password --region ' + region) }}"
-       reauthorize: yes
-
+    # Log in to Amazon ECR
+    - name: Log in to Amazon ECR
+      docker_login:
+        registry_url: "{{ ecr_url }}"
+        username: AWS
+        password: "{{ lookup('pipe', 'aws ecr get-login-password --region ' + region) }}"
+        reauthorize: yes
 
     # Pull frontend Docker image from ECR to EC2 instance
     - name: Pull Docker image for the frontend from ECR to EC2 instance
@@ -129,12 +127,13 @@
         name: "{{ ecr_url }}/{{ ecr_repository }}:{{ backend_image_tag }}"
         source: pull
 
-    # Additional tasks like Docker Compose (up) can go here
+    # Copy docker-compose.yaml to EC2 instance
     - name: Copy docker-compose.yaml to EC2 instance
       copy:
         src: "/home/rahma/Devops-Cloud-TP_ENIS/enis-app-tp/docker-compose.yml"
         dest: "/home/ubuntu/docker-compose.yml"
 
+    # Start Docker containers using Docker Compose
     - name: Start Docker containers using Docker Compose
       docker_compose:
         project_src: "/home/ubuntu"
@@ -146,4 +145,3 @@
 
     - name: Run migrations inside backend container
       command: docker exec {{ backend_container_name }} python manage.py migrate
-
