@@ -6,7 +6,7 @@ docker_package_name: "docker.io"
 
 # Docker Variables
 docker_network_name: "my_bridge"  # The name of the Docker network to use
-compose_local_path: "/var/lib/jenkins/workspace/devops-cloud-project/ansible/docker-compose.yaml""  # Local path of docker-compose.yml
+compose_local_path: "/var/lib/jenkins/workspace/devops-cloud-project/ansible/docker-compose.yaml"  # Local path of docker-compose.yml
 compose_remote_path: "/home/ubuntu/docker-compose.yml"  # Remote path on the EC2 instance where the file will be copied
 project_src_path: "/home/ubuntu"  # Directory on the EC2 instance where docker-compose.yml is located
 backend_container_name: "backend-app"  # Container name for the backend app
