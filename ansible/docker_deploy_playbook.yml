@@ -65,10 +65,10 @@
         groups: docker
         append: yes
 
-    # Reconnect to server session
-    - name: Reconnect to server session
-      meta: reset_connection
-      - name: Install AWS CLI on EC2 Instances
+- name: Reconnect to server session
+  meta: reset_connection
+
+- name: Install AWS CLI on EC2 Instances
   hosts: servers
   become: yes
   tasks:
