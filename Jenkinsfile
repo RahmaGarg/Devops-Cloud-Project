@@ -1,65 +1,64 @@
 def EC2_PUBLIC_IP = ""
 def RDS_ENDPOINT = ""
 def DEPLOYER_KEY_URI = ""
+
 pipeline {
     agent any
     environment {
-            AWS_ACCESS_KEY_ID = credentials('jenkins_aws_access_key_id')
-            AWS_SECRET_ACCESS_KEY = credentials('jenkins_aws_secret_access_key')
-            ECR_REPO_URL = '241533154231.dkr.ecr.us-east-1.amazonaws.com'
-            ECR_REPO_NAME = 'enis-application'
-            IMAGE_REPO = "${ECR_REPO_URL}/${ECR_REPO_NAME}"
-            IMAGE_REPO_FRONTEND = "${IMAGE_REPO}:frontend-1.0"
-            IMAGE_REPO_BACKEND = "${IMAGE_REPO}:backend-1.0"
-            AWS_REGION = "us-east-1"
-
-        }
+        AWS_ACCESS_KEY_ID = credentials('jenkins_aws_access_key_id')
+        AWS_SECRET_ACCESS_KEY = credentials('jenkins_aws_secret_access_key')
+        ECR_REPO_URL = '241533154231.dkr.ecr.us-east-1.amazonaws.com'
+        ECR_REPO_NAME = 'enis-application'
+        IMAGE_REPO = "${ECR_REPO_URL}/${ECR_REPO_NAME}"
+        IMAGE_REPO_FRONTEND = "${IMAGE_REPO}:frontend-1.0"
+        IMAGE_REPO_BACKEND = "${IMAGE_REPO}:backend-1.0"
+        AWS_REGION = "us-east-1"
+    }
     stages {
-         stage('Provision Server and Database') {
-             steps {
-                 script {
-                     dir('my-terraform-project/remote-backend') {
-                         sh "terraform init"
-                         // Apply Terraform configuration
-                         sh "terraform apply --auto-approve"
-                     }
-                     dir('my-terraform-project') {
-                         // Initialize Terraform
-                         sh "terraform init"
-                         sh "terraform plan -lock=false"
+        stage('Provision Server and Database') {
+            steps {
+                script {
+                    dir('my-terraform-project/remote-backend') {
+                        sh "terraform init"
+                        // Apply Terraform configuration
+                        sh "terraform apply --auto-approve"
+                    }
+                    dir('my-terraform-project') {
+                        // Initialize Terraform
+                        sh "terraform init"
+                        sh "terraform plan -lock=false"
 
-                         // Apply Terraform configuration
-                         sh "terraform apply -lock=false --auto-approve"
+                        // Apply Terraform configuration
+                        sh "terraform apply -lock=false --auto-approve"
 
-                         // Get EC2 Public IP
-                         EC2_PUBLIC_IP = sh(
-                             script: 'terraform output instance_details | grep "instance_public_ip" | awk \'{print $3}\' | tr -d \'"\'',
-                             returnStdout: true
-                         ).trim()
+                        // Get EC2 Public IP
+                        EC2_PUBLIC_IP = sh(
+                            script: 'terraform output instance_details | grep "instance_public_ip" | awk \'{print $3}\' | tr -d \'"\'',
+                            returnStdout: true
+                        ).trim()
 
-                         // Get RDS Endpoint
-                         // Get RDS Endpoint
-                         RDS_ENDPOINT = sh(
-                             script: '''
-                             terraform output rds_endpoint | grep "endpoint" | awk -F'=' '{print $2}' | tr -d '[:space:]"' | sed 's/:3306//'
-                             ''',
-                             returnStdout: true
-                         ).trim()
-
+                        // Get RDS Endpoint
+                        RDS_ENDPOINT = sh(
+                            script: '''
+                            terraform output rds_endpoint | grep "endpoint" | awk -F'=' '{print $2}' | tr -d '[:space:]"' | sed 's/:3306//'
+                            ''',
+                            returnStdout: true
+                        ).trim()
 
                         DEPLOYER_KEY_URI = sh(
-                             script: 'terraform output deployer_key_s3_uri | tr -d \'"\'',
-                             returnStdout: true
-                         ).trim()
+                            script: 'terraform output deployer_key_s3_uri | tr -d \'"\'',
+                            returnStdout: true
+                        ).trim()
 
-                         // Debugging: Print captured values
-                         echo "EC2 Public IP: ${EC2_PUBLIC_IP}"
-                         echo "RDS Endpoint: ${RDS_ENDPOINT}"
-                         echo "Deployer Key URI: ${DEPLOYER_KEY_URI}"
-                     }
-                 }
-             }
-         }
+                        // Debugging: Print captured values
+                        echo "EC2 Public IP: ${EC2_PUBLIC_IP}"
+                        echo "RDS Endpoint: ${RDS_ENDPOINT}"
+                        echo "Deployer Key URI: ${DEPLOYER_KEY_URI}"
+                    }
+                }
+            }
+        }
+
         stage('Update Frontend Configuration') {
             steps {
                 script {
@@ -75,6 +74,7 @@ pipeline {
                 }
             }
         }
+
         stage('Update Backend Configuration') {
             steps {
                 script {
@@ -84,7 +84,7 @@ pipeline {
                         if [ -f "settings.py" ]; then
                             echo "Found settings.py at $(pwd)"
                         else
-                            echo "settings.py not found in $(pwd)!"
+                            echo "settings.py not found in $(pwd)! Exiting..."
                             exit 1
                         fi
                         '''
@@ -101,47 +101,46 @@ pipeline {
                 }
             }
         }
-   stage('Create Database in RDS') {
-    steps {
-        script {
-            // Ensure that RDS_ENDPOINT is correctly populated before using it
-            def rdsEndpoint = sh(script: 'terraform output -raw rds_endpoint', returnStdout: true).trim()
 
-            // Run MySQL commands
-            sh """
-            mysql -h ${rdsEndpoint} -P 3306 -u dbuser -pDBpassword2024 -e "CREATE DATABASE IF NOT EXISTS enis_tp;"
-            mysql -h ${rdsEndpoint} -P 3306 -u dbuser -pDBpassword2024 -e "SHOW DATABASES;"
-            """
+        stage('Create Database in RDS') {
+            steps {
+                script {
+                    // Ensure that RDS_ENDPOINT is correctly populated before using it
+                    def rdsEndpoint = sh(script: 'terraform output -raw rds_endpoint', returnStdout: true).trim()
+
+                    // Run MySQL commands
+                    sh """
+                    mysql -h ${rdsEndpoint} -P 3306 -u dbuser -pDBpassword2024 -e "CREATE DATABASE IF NOT EXISTS enis_tp;"
+                    mysql -h ${rdsEndpoint} -P 3306 -u dbuser -pDBpassword2024 -e "SHOW DATABASES;"
+                    """
+                }
+            }
         }
-    }
-}
-
-
-
-
 
         stage('Build Frontend Docker Image') {
-                    steps {
-                        dir('enis-app-tp/frontend') {
-                            script {
-                                echo 'Building Frontend Docker Image...'
-                                def frontendImage = docker.build('frontend-app')
-                                echo "Built Image: ${frontendImage.id}"
-                            }
-                        }
+            steps {
+                dir('enis-app-tp/frontend') {
+                    script {
+                        echo 'Building Frontend Docker Image...'
+                        def frontendImage = docker.build('frontend-app')
+                        echo "Built Image: ${frontendImage.id}"
                     }
                 }
+            }
+        }
+
         stage('Build Backend Docker Image') {
-                    steps {
-                        dir('enis-app-tp/backend') {
-                            script {
-                                echo 'Building Backend Docker Image...'
-                                def backendImage = docker.build('backend-app')
-                                echo "Built Image: ${backendImage.id}"
-                            }
-                        }
+            steps {
+                dir('enis-app-tp/backend') {
+                    script {
+                        echo 'Building Backend Docker Image...'
+                        def backendImage = docker.build('backend-app')
+                        echo "Built Image: ${backendImage.id}"
                     }
                 }
+            }
+        }
+
         stage('Login to AWS ECR') {
             steps {
                 script {
@@ -151,15 +150,17 @@ pipeline {
                 }
             }
         }
-         stage('Tag and Push Frontend Image') {
-                    steps {
-                        script {
-                            echo 'Tagging and pushing Frontend Image...'
-                            sh "docker tag frontend-app:latest $IMAGE_REPO_FRONTEND"
-                            sh "docker push $IMAGE_REPO_FRONTEND"
-                        }
-                    }
+
+        stage('Tag and Push Frontend Image') {
+            steps {
+                script {
+                    echo 'Tagging and pushing Frontend Image...'
+                    sh "docker tag frontend-app:latest $IMAGE_REPO_FRONTEND"
+                    sh "docker push $IMAGE_REPO_FRONTEND"
                 }
+            }
+        }
+
         stage('Tag and Push Backend Image') {
             steps {
                 script {
@@ -169,6 +170,7 @@ pipeline {
                 }
             }
         }
+
         stage('Download SSH Key from S3') {
             steps {
                 script {
@@ -190,6 +192,7 @@ pipeline {
                 }
             }
         }
+
         stage('Update Hosts File') {
             steps {
                 script {
@@ -201,7 +204,7 @@ pipeline {
                             echo "Updated hosts file:"
                             cat hosts
                         else
-                            echo "hosts file not found in \$(pwd)!"
+                            echo "hosts file not found in \$(pwd)! Exiting..."
                             exit 1
                         fi
                         """
@@ -210,116 +213,31 @@ pipeline {
             }
         }
 
-//  for linux users
-
-//         stage('Check Ansible Version') {
-//             steps {
-//                 script {
-//                     sh """
-//                     echo "Printing the current Ansible version:"
-//                     ansible --version
-//                     """
-//                 }
-//             }
-//         }
-//         stage('Run Ansible Playbook') {
-//             steps {
-//                 script {
-//                     dir('ansible') {
-//                         sh """
-//                         if [ -f "docker_deploy_playbook.yml" ]; then
-//                             echo "Found playbook docker_deploy_playbook.yml"
-//
-//                             # Run the Ansible playbook
-//                             ansible-playbook -i hosts docker_deploy_playbook.yml
-//                         else
-//                             echo "Playbook docker_deploy_playbook.yml not found!"
-//                             exit 1
-//                         fi
-//                         """
-//                     }
-//                 }
-//             }
-//         }
-
-
-//  for windows users
-
-
-        stage('Check and Manage Ansible Container') {
+        // For Linux users
+        stage('Check Ansible Version') {
             steps {
                 script {
-                    dir('ansible') {
-                        sh '''
-                        echo "Checking and managing the 'my_ansible_container'"
-
-                        CONTAINER_NAME="my_ansible_container"
-                        IMAGE_NAME="cytopia/ansible"
-
-                        # Stop and remove the container if it exists
-                        if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-                            echo "Container ${CONTAINER_NAME} exists. Stopping and removing it..."
-                            docker stop ${CONTAINER_NAME} || true
-                            docker rm ${CONTAINER_NAME} || true
-                        fi
-
-                        # Create and start a new container with volume mounted
-                        echo "Creating and starting a new container with the ansible directory mounted..."
-                        docker run -dit --name ${CONTAINER_NAME} \
-                            -v $(pwd):/ansible \
-                            -w /ansible \
-                            ${IMAGE_NAME} \
-                            sh -c 'while true; do sleep 30; done'
-
-                        # Verify the ansible directory and its contents in the container
-                        echo "Verifying the ansible directory and its contents in the container:"
-                        docker exec ${CONTAINER_NAME} sh -c "ls /ansible && cat /ansible/hosts || echo 'Directory or file not found'"
-                        '''
-                    }
+                    sh """
+                    echo "Printing the current Ansible version:"
+                    ansible --version
+                    """
                 }
             }
         }
-        stage('Install OpenSSH in Ansible Container') {
-                    steps {
-                        script {
-                            dir('ansible') {
-                                sh '''
-                                echo "Installing OpenSSH in the Ansible container"
-
-                                CONTAINER_NAME="my_ansible_container"
-
-                                # Install OpenSSH
-                                docker exec ${CONTAINER_NAME} sh -c "apk update && apk add openssh"
-
-                                # Verify OpenSSH installation
-                                echo "Verifying OpenSSH installation"
-                                docker exec ${CONTAINER_NAME} ssh -V || echo "OpenSSH not installed correctly"
-                                '''
-                            }
-                        }
-                    }
-                }
 
         stage('Run Ansible Playbook') {
             steps {
                 script {
                     dir('ansible') {
-                        sh '''
-                        echo "Running Ansible playbook inside the container"
-
-                        CONTAINER_NAME="my_ansible_container"
-                        PLAYBOOK="docker_deploy_playbook.yml"
-                        INVENTORY="hosts"
-
-                        # Check if playbook exists
-                        if [ -f "${PLAYBOOK}" ]; then
-                            echo "Playbook ${PLAYBOOK} found. Running it now..."
-                            docker exec ${CONTAINER_NAME} ansible-playbook -i ${INVENTORY} ${PLAYBOOK}
+                        sh """
+                        if [ -f "docker_deploy_playbook.yml" ]; then
+                            echo "Found playbook docker_deploy_playbook.yml"
+                            ansible-playbook -i hosts docker_deploy_playbook.yml
                         else
-                            echo "Playbook ${PLAYBOOK} not found!"
+                            echo "Playbook docker_deploy_playbook.yml not found!"
                             exit 1
                         fi
-                        '''
+                        """
                     }
                 }
             }
@@ -327,15 +245,14 @@ pipeline {
 
     }
     post {
-            success {
-                script {
-                    def instanceUrl = "http://${EC2_PUBLIC_IP}:81"
-                    echo "The instance is successfully deployed. Access it here: ${instanceUrl}"
-                }
-            }
-            failure {
-                echo "The pipeline failed. Please check the logs for details."
+        success {
+            script {
+                def instanceUrl = "http://${EC2_PUBLIC_IP}:81"
+                echo "The instance is successfully deployed. Access it here: ${instanceUrl}"
             }
         }
+        failure {
+            echo "The pipeline failed. Please check the logs for details."
+        }
+    }
 }
-
