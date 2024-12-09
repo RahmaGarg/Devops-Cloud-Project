@@ -6,7 +6,7 @@ pipeline {
     environment {
             AWS_ACCESS_KEY_ID = credentials('jenkins_aws_access_key_id')
             AWS_SECRET_ACCESS_KEY = credentials('jenkins_aws_secret_access_key')
-            AWS_CREDENTIALS_ID = 'awscridentalforjenkins'
+            AWS_CREDENTIALS_ID = 'aws-credentials'
             ECR_REPO_URL = '241533154231.dkr.ecr.us-east-1.amazonaws.com'
             ECR_REPO_NAME = 'enis-application'
             IMAGE_REPO = "${ECR_REPO_URL}/${ECR_REPO_NAME}"
