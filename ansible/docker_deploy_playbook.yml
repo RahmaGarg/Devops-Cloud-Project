@@ -130,7 +130,7 @@
     # Copy docker-compose.yaml to EC2 instance
     - name: Copy docker-compose.yaml to EC2 instance
       copy:
-        src: "/home/rahma/Devops-Cloud-TP_ENIS/enis-app-tp/docker-compose.yml"
+        src: "/var/lib/jenkins/workspace/clone\ pipeline\ test/enis-app-tp/docker-compose.yml"
         dest: "/home/ubuntu/docker-compose.yml"
 
     # Start Docker containers using Docker Compose
