@@ -101,16 +101,21 @@ pipeline {
                 }
             }
         }
-        stage('Create Database in RDS') {
-            steps {
-                script {
-                    sh """
-                    mysql -h ${RDS_ENDPOINT} -P 3306 -u dbuser -pDBpassword2024 -e "CREATE DATABASE IF NOT EXISTS enis_tp;"
-                    mysql -h ${RDS_ENDPOINT} -P 3306 -u dbuser -pDBpassword2024 -e "SHOW DATABASES;"
-                    """
-                }
-            }
+   stage('Create Database in RDS') {
+    steps {
+        script {
+            // Ensure that RDS_ENDPOINT is correctly populated before using it
+            def rdsEndpoint = sh(script: 'terraform output -raw rds_endpoint', returnStdout: true).trim()
+
+            // Run MySQL commands
+            sh """
+            mysql -h ${rdsEndpoint} -P 3306 -u dbuser -pDBpassword2024 -e "CREATE DATABASE IF NOT EXISTS enis_tp;"
+            mysql -h ${rdsEndpoint} -P 3306 -u dbuser -pDBpassword2024 -e "SHOW DATABASES;"
+            """
         }
+    }
+}
+
 
 
 
