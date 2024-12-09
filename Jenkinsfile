@@ -103,19 +103,23 @@ pipeline {
         }
 
         stage('Create Database in RDS') {
-            steps {
-                script {
-                    // Ensure that RDS_ENDPOINT is correctly populated before using it
-                    def rdsEndpoint = sh(script: 'terraform output -raw rds_endpoint', returnStdout: true).trim()
+    steps {
+        script {
+            def rdsEndpoint = sh(script: 'terraform output -raw rds_endpoint', returnStdout: true).trim()
 
-                    // Run MySQL commands
-                    sh """
-                    mysql -h ${rdsEndpoint} -P 3306 -u dbuser -pDBpassword2024 -e "CREATE DATABASE IF NOT EXISTS enis_tp;"
-                    mysql -h ${rdsEndpoint} -P 3306 -u dbuser -pDBpassword2024 -e "SHOW DATABASES;"
-                    """
-                }
+            if (rdsEndpoint.isEmpty()) {
+                error "RDS endpoint is empty. Please check your Terraform configuration."
             }
+
+            sh """
+                mysql -h ${rdsEndpoint} -P 3306 -u dbuser -p123 -e "
+                    CREATE DATABASE IF NOT EXISTS enis_tp;
+                    SHOW DATABASES;
+                "
+            """
         }
+    }
+}
 
         stage('Build Frontend Docker Image') {
             steps {
