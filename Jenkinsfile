@@ -103,21 +103,19 @@ pipeline {
         }
 
         stage('Create Database in RDS') {
-    steps {
-        script {
-            // Ensure that RDS_ENDPOINT is correctly populated before using it
-            def rdsEndpoint = sh(script: 'terraform output -raw rds_endpoint', returnStdout: true).trim()
+            steps {
+                script {
+                    // Ensure that RDS_ENDPOINT is correctly populated before using it
+                    def rdsEndpoint = sh(script: 'terraform output -raw rds_endpoint', returnStdout: true).trim()
 
-            // Run MySQL commands
-            echo "RDS Endpoint: ${rdsEndpoint}"
-            sh """
-                mysql -h ${rdsEndpoint} -P 3306 -u dbuser -p${DB_PASSWORD} -e "CREATE DATABASE IF NOT EXISTS enis_tp;"
-                mysql -h ${rdsEndpoint} -P 3306 -u dbuser -p${DB_PASSWORD} -e "SHOW DATABASES;"
-            """
+                    // Run MySQL commands
+                    sh """
+                    mysql -h ${rdsEndpoint} -P 3306 -u dbuser -pDBpassword2024 -e "CREATE DATABASE IF NOT EXISTS enis_tp;"
+                    mysql -h ${rdsEndpoint} -P 3306 -u dbuser -pDBpassword2024 -e "SHOW DATABASES;"
+                    """
+                }
+            }
         }
-    }
-}
-
 
         stage('Build Frontend Docker Image') {
             steps {
