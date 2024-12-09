@@ -130,12 +130,13 @@
     # Copy docker-compose.yaml to EC2 instance
     - name: Copy docker-compose.yaml to EC2 instance
       copy:
-        src: "/var/lib/jenkins/workspace/clone\ pipeline\ test/enis-app-tp/docker-compose.yml"
+        src: "/var/lib/jenkins/workspace/clone pipeline test/enis-app-tp/docker-compose.yml"
         dest: "/home/ubuntu/docker-compose.yml"
 
+    # Create Docker network 'my_bridge'
     - name: Create Docker network 'my_bridge'
-  command: docker network create my_bridge
-  ignore_errors: true  # This ensures that the playbook doesn't fail if the network already exists
+      command: docker network create my_bridge
+      ignore_errors: true  # This ensures that the playbook doesn't fail if the network already exists
 
     # Start Docker containers using Docker Compose
     - name: Start Docker containers using Docker Compose
