@@ -106,8 +106,8 @@ pipeline {
             steps {
                 script {
                     sh """
-                    mysql -h ${RDS_ENDPOINT} -P 3306 -u dbuser -p123 -e "CREATE DATABASE IF NOT EXISTS enis_tp;"
-                    mysql -h ${RDS_ENDPOINT} -P 3306 -u dbuser -p123 -e "SHOW DATABASES;"
+                    mysql -h ${RDS_ENDPOINT} -P 3306 -u dbuser -prahma123 -e "CREATE DATABASE IF NOT EXISTS enis_tp;"
+                    mysql -h ${RDS_ENDPOINT} -P 3306 -u dbuser -prahma123 -e "SHOW DATABASES;"
                     """
                 }
             }
