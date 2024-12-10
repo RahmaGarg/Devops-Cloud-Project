@@ -1,9 +1,6 @@
 # 🚀 Automated CI/CD Pipeline for Containerized 3-Tier Architecture  
 
-This repository demonstrates the implementation of a **fully automated pipeline* to deploy a *containerized 3-tier application architecture*. 💻✨  
-
-## 🛠 *Project Overview*  
-This project integrates modern DevOps tools and practices to ensure a streamlined, reliable, and efficient deployment process.  
+This repository demonstrates the implementation of a fully automated pipeline to deploy a containerized 3-tier application architecture.  
 
 ### *Key Features*  
 - *Containerization: Built with **Docker* and *Docker Compose* for packaging applications.  
